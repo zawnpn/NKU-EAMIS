@@ -1,5 +1,5 @@
 ## Introduction
-A simple tool to help get information in NKU-EAMIS(NKU Education Affairs Management Information Ststem).
+A simple tool to help get information in NKU-EAMIS(NKU Education Affairs Management Information System).
 
 ## Install & Use
 Use command `sudo pip3 install nkueamis` to install, then just execute `nkueamis` with some options in your terminal;
