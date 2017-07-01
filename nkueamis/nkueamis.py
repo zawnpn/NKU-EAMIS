@@ -3,8 +3,8 @@
 # @Time    : 2017-07-01 11:03
 # @Author  : Wanpeng Zhang
 # @Site    : http://www.oncemath.com
-# @File    : main.py
-# @Project : NKU-EAMIS
+# @File    : nkueamis.py
+# @Project : nku-eamis
 
 """
 Usage:
