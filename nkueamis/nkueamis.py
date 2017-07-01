@@ -11,7 +11,7 @@ Usage:
     nkueamis (-g | --grade) <course_category> [-u <username> -p <password>]
     nkueamis (-c | --course) [-u <username> -p <password>]
 
-A simple tool to help get information in NKU-EAMIS(NKU Education Affairs Management Information Ststem).
+A simple tool to help get information in NKU-EAMIS(NKU Education Affairs Management Information System).
 
 Arguments:
     course_category      the category of courses which you want to query(only can be combination of A,B,C,D,E)
