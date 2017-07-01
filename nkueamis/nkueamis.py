@@ -4,14 +4,14 @@
 # @Author  : Wanpeng Zhang
 # @Site    : http://www.oncemath.com
 # @File    : nkueamis.py
-# @Project : nku-eamis
+# @Project : NKU-EAMIS
 
 """
 Usage:
     nkueamis (-g | --grade) <course_category> [-u <username> -p <password>]
     nkueamis (-c | --course) [-u <username> -p <password>]
 
-A simple tool to help get information in NKU-EAMIS(NKU Education Affairs Management Information System).
+A simple tool to help get information in NKU-EAMIS(NKU Education Affairs Management Information Ststem).
 
 Arguments:
     course_category      the category of courses which you want to query(only can be combination of A,B,C,D,E)
@@ -42,11 +42,8 @@ COURSE_CAT = ['校公共必修课', '院系公共必修课', '专业必修课', 
 HOME_URL = 'http://eamis.nankai.edu.cn/eams/login.action'
 GRADE_URL = 'http://eamis.nankai.edu.cn/eams/myPlanCompl.action'
 COURSETABLE_QUERY_URL = 'http://eamis.nankai.edu.cn/eams/dataQuery.action'
+COURSETABLE_ID_URL = 'http://eamis.nankai.edu.cn/eams/courseTableForStd.action'
 COURSETABLE_URL = 'http://eamis.nankai.edu.cn/eams/courseTableForStd!courseTable.action'
-COURSE_DATA = {
-    'setting.kind': 'std',
-    'ids': '250460'
-}
 
 
 # test the network
@@ -137,6 +134,14 @@ def tuple_conv(strtuple):
     return tuple(inttuple)
 
 
+# get the necessary id to post data for course table
+def get_std_course_id(resp):
+    std_id_pattern = \
+        re.compile('if\(jQuery\("#courseTableType"\)\.val\(\)=="std"\).*?form\.addInput\(form,"ids","(.+?)"\);', re.S)
+    std_id = std_id_pattern.findall(resp.content.decode('utf-8'))
+    return std_id
+
+
 # get information of courses
 def get_course_info(resp):
     teacher_pattern = re.compile('var teachers = \[{id:.*?,name:"(.+?)",lab:.*?}\];')
@@ -204,15 +209,20 @@ def main():
         test_net()
         sess = log_in(args['<username>'], args['<password>'])
 
+        # get the grade
         if args['--grade']:
-            # get the grade
             response = sess.get(GRADE_URL)
             print_grade_table(response, args['<course_category>'])
 
+        # get the course table
         if args['--course']:
-            # get the course table
+            response = sess.get(COURSETABLE_ID_URL)
+            course_data = {
+                'setting.kind': 'std',
+                'ids': '%s' % get_std_course_id(response)[0]
+            }
             sess.post(COURSETABLE_QUERY_URL)
-            response = sess.post(COURSETABLE_URL, data=COURSE_DATA)
+            response = sess.post(COURSETABLE_URL, data=course_data)
             courses = get_course_info(response)
             print_course_table(courses)
 
