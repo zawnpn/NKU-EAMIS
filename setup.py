@@ -6,7 +6,7 @@ setup(
     author = 'Wanpeng Zhang',
     author_email = 'zawnpn@gmail.com',
     keywords = ('NKU', 'eamis', 'Education'),
-    url = 'https://github.com/zawnpn/nku-eamis',
+    url = 'https://github.com/zawnpn/nkueamis',
     description = 'A simple tool to help get information in NKU-EAMIS(NKU Education Affairs Management Information Ststem).',
     classifiers=[
         'Development Status :: 3 - Alpha',
