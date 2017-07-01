@@ -4,7 +4,7 @@
 # @Author  : Wanpeng Zhang
 # @Site    : http://www.oncemath.com
 # @File    : nkueamis.py
-# @Project : NKU-EAMIS
+# @Project : nkueamis
 
 """
 Usage:
