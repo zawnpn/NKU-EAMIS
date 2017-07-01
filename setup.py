@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
  
 setup(
     name = 'nkueamis',
-    version = '0.1.1',
+    version = '0.1.3',
     author = 'Wanpeng Zhang',
     author_email = 'zawnpn@gmail.com',
     keywords = ('NKU', 'eamis', 'Education'),
