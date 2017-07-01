@@ -7,7 +7,7 @@ setup(
     author_email = 'zawnpn@gmail.com',
     keywords = ('NKU', 'eamis', 'Education'),
     url = 'https://github.com/zawnpn/nkueamis',
-    description = 'A simple tool to help get information in NKU-EAMIS(NKU Education Affairs Management Information Ststem).',
+    description = 'A simple tool to help get information in NKU-EAMIS(NKU Education Affairs Management Information System).',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
