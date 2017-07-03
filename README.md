@@ -12,25 +12,34 @@ To upgrade this program, just execute `sudo pip3 install nkueamis --upgrade` .
  - Elect courses
 
 ## Usage
-    nkueamis (-g | --grade) <course_category> [-u <username> -p <password>]
-    nkueamis (-c | --course) [-u <username> -p <password>]
+    nkueamis -g <course_category> [-u <username> -p <password>]
+    nkueamis -c [-s <semester>]
+    nkueamis -c [-u <username> -p <password>]
+    nkueamis -c -s <semester> -u <username> -p <password>
+    nkueamis -e [-s <semester>]
+    nkueamis -e [-u <username> -p <password>]
+    nkueamis -e -s <semester> -u <username> -p <password>
 
 ## Arguments
     course_category      the category of courses which you want to query(only can be combination of A,B,C,D,E)
+    semester             the semester you want to query, must be '[Year]-[Year]:[Semester]' type
     username             your username in NKU-EAMIS system
     password             your password in NKU-EAMIS system
 
 ## Options
-    -g, --grade          grade query
-    -c, --course         course query
+    -g                   grade query
+    -c                   course query
+    -e                   exam query
     -u                   username
     -p                   password
     -h, --help           guidance
 
 ## Examples
-    nkueamis -c
     nkueamis -g BCD
-    nkueamis -g BCD -u your_username -p your_password
+    nkueamis -g ABCDE -u your_username -p your_password
+    nkueamis -c
+    nkueamis -c -s 2016-2017:2
+    nkueamis -e -u your_username -p your_password
     
 ## Author
 Blog:[Wanpeng Zhang](http://www.oncemath.com)

@@ -8,8 +8,13 @@
 
 """
 Usage:
-    nkueamis (-g | --grade) <course_category> [-u <username> -p <password>]
-    nkueamis (-c | --course) [-u <username> -p <password>]
+    nkueamis -g <course_category> [-u <username> -p <password>]
+    nkueamis -c [-s <semester>]
+    nkueamis -c [-u <username> -p <password>]
+    nkueamis -c -s <semester> -u <username> -p <password>
+    nkueamis -e [-s <semester>]
+    nkueamis -e [-u <username> -p <password>]
+    nkueamis -e -s <semester> -u <username> -p <password>
 
 A simple tool to help get information in NKU-EAMIS(NKU Education Affairs Management Information System).
 
@@ -19,16 +24,20 @@ Arguments:
     password             your password in NKU-EAMIS system
 
 Options:
-    -g, --grade          grade query
-    -c, --course         course query
+    -g                   grade query
+    -c                   course query
+    -e                   exam query
     -u                   username
     -p                   password
     -h, --help           guidance
 
 Examples:
-    nkueamis -c
     nkueamis -g BCD
-    nkueamis -g BCD -u your_username -p your_password
+    nkueamis -g ABCDE -u your_username -p your_password
+    nkueamis -c
+    nkueamis -c -s 2016-2017:2
+    nkueamis -e -u your_username -p your_password
+
 """
 
 from docopt import docopt
@@ -38,17 +47,23 @@ from bs4 import BeautifulSoup
 import prettytable
 import getpass
 
+HOME_URL = 'http://eamis.nankai.edu.cn'
+LOGIN_URL = HOME_URL + '/eams/login.action'
+STD_DETAIL_BASIC_URL = HOME_URL + '/eams/stdDetail.action'
+STD_DETAIL_URL = HOME_URL + '/eams/stdDetail!innerIndex.action'
+GRADE_URL = HOME_URL + '/eams/myPlanCompl!innerIndex.action'
+COURSETABLE_QUERY_URL = HOME_URL + '/eams/dataQuery.action'
+COURSETABLE_CLASS_URL = HOME_URL + '/eams/courseTableForStd.action'
+COURSETABLE_ID_URL = HOME_URL + '/eams/courseTableForStd!innerIndex.action'
+COURSETABLE_URL = HOME_URL + '/eams/courseTableForStd!courseTable.action'
+EXAM_ID_URL = HOME_URL + '/eams/stdExam.action'
+EXAM_URL = HOME_URL + '/eams/stdExam!examTable.action'
 COURSE_CAT = ['校公共必修课', '院系公共必修课', '专业必修课', '专业选修课', '任选课']
-HOME_URL = 'http://eamis.nankai.edu.cn/eams/login.action'
-GRADE_URL = 'http://eamis.nankai.edu.cn/eams/myPlanCompl.action'
-COURSETABLE_QUERY_URL = 'http://eamis.nankai.edu.cn/eams/dataQuery.action'
-COURSETABLE_ID_URL = 'http://eamis.nankai.edu.cn/eams/courseTableForStd.action'
-COURSETABLE_URL = 'http://eamis.nankai.edu.cn/eams/courseTableForStd!courseTable.action'
 
 
 # test the network
 def test_net():
-    conn = requests.get(HOME_URL)
+    conn = requests.get(LOGIN_URL)
     response_status = conn.status_code
     if response_status == '200':
         return False
@@ -57,17 +72,31 @@ def test_net():
 
 
 # login to the system
-def log_in(username=None, password=None):
-    if not username or not password:
-        username = input('Input your Student ID:')
-        password = getpass.getpass('Input your password:')
+def log_in(username, password):
     login_data = {
         'username': username,
         'password': password
     }
     s = requests.session()
-    s.post(HOME_URL, data=login_data)
+    s.post(LOGIN_URL, data=login_data)
     return s
+
+
+# find student's detail
+def get_std_detail(content):
+    pattern = re.compile(
+        '姓名：</td>.*?<td>(.+?)</td>.*?院系：</td>.*?<td>(.+?)</td>.*?专业：</td>.*?<td>(.+?)</td>', re.S)
+    detail = pattern.findall(content)
+    return detail
+
+
+# print detail of student on screen
+def print_std_detail(sess):
+    resp = sess.get(STD_DETAIL_URL + '?projectId=1')
+    result = get_std_detail(resp.content.decode())
+    if result:
+        std_detail = result[0]
+        print('\n姓名:%s\n院系:%s\n专业:%s\n' % (std_detail[0], std_detail[1], std_detail[2]))
 
 
 # find the category of course
@@ -77,6 +106,14 @@ def find_course_cat(i, content):
     return result
 
 
+# convert str tuple into num tuple
+def tuple_conv(strtuple):
+    inttuple = []
+    for i in strtuple:
+        inttuple.append(int(i))
+    return tuple(inttuple)
+
+
 # replace some irregular words
 def replace_some_word(text):
     replace_origin = ['Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ']
@@ -84,6 +121,27 @@ def replace_some_word(text):
     for i in range(4):
         text = text.replace(replace_origin[i], replace_target[i])
     return text
+
+
+# find the information of semester
+def get_semester_info(data):
+    pattern = re.compile('{id:(.+?),schoolYear:"(.+?)",name:"(.+?)"}', re.S)
+    result = pattern.findall(data)
+    return result
+
+
+# determine the semester_id based on the <semester> arg
+def determine_semester_id(sess, semester):
+    semester = semester.split(':')
+    semester_data = {'dataType': 'semesterCalendar'}
+    resp = sess.post(COURSETABLE_QUERY_URL, data=semester_data)
+    semester_info = get_semester_info(resp.content.decode())
+    for i in semester_info:
+        if list(i)[1:] == semester:
+            semester_id = i[0]
+            return semester_id
+    print('Failed to find your semester, please make sure that you\'ve correctly inputed!')
+    exit()
 
 
 # get information of grades
@@ -102,9 +160,8 @@ def get_grade_info(i, table):
 # get grade information of specified courses
 def get_specified_grade(resp, cat_list_str):
     result = []
-
-    cat_list_num = [ord(i)-65 for i in cat_list_str.upper() if ord(i) in range(65,70)]
-    soup = BeautifulSoup(resp.content.decode('utf-8'), 'html.parser')
+    cat_list_num = [ord(i)-65 for i in cat_list_str]
+    soup = BeautifulSoup(resp.content.decode(), 'html.parser')
     for i in cat_list_num:
         result.append(get_grade_info(i+1, soup('tr')))
     return result
@@ -116,7 +173,7 @@ def grade_calc(table):
     scoresum = 0
     for cat in table:
         for i in cat:
-            if i[2] != '--':
+            if i[2] and i[2] != '--':
                 gradesum += float(i[1])*float(i[2])
                 scoresum += float(i[1])
     if scoresum:
@@ -126,38 +183,32 @@ def grade_calc(table):
     return avg, scoresum
 
 
-# convert str tuple into num tuple
-def tuple_conv(strtuple):
-    inttuple = []
-    for i in strtuple:
-        inttuple.append(int(i))
-    return tuple(inttuple)
-
-
 # get the necessary id to post data for course table
 def get_std_course_id(resp):
     std_id_pattern = \
-        re.compile('if\(jQuery\("#courseTableType"\)\.val\(\)=="std"\).*?form\.addInput\(form,"ids","(.+?)"\);', re.S)
-    std_id = std_id_pattern.findall(resp.content.decode('utf-8'))
+        re.compile('bg\.form\.addInput\(form,"ids","(.+?)"\);')
+    std_id = std_id_pattern.findall(resp.content.decode())
     return std_id
 
 
 # get information of courses
 def get_course_info(resp):
     teacher_pattern = re.compile('var teachers = \[{id:.*?,name:"(.+?)",lab:.*?}\];')
-    course_info_pattern = re.compile(r"""\)","(.+?)\(.+?\)",".+?","(.+?)","01{3,}0{3,}""", re.X)
+    course_info_pattern = re.compile('\)","(.+?)\(.+?\)",".*?","(.*?)","01{3,}0{3,}"')
     course_time_pattern = re.compile('=(.+?)\*unitCount\+(.+?);')
-    teacher_name = teacher_pattern.findall(resp.content.decode('utf-8'))
-    course_info_iter = course_info_pattern.finditer(resp.content.decode('utf-8'))
-    course_info = course_info_pattern.findall(resp.content.decode('utf-8'))
+    teacher_name = teacher_pattern.findall(resp.content.decode())
+    course_info_iter = course_info_pattern.finditer(resp.content.decode())
+    test = course_info_pattern.findall(resp.content.decode())
+    course_info = course_info_pattern.findall(resp.content.decode())
     course_pos = [i.start() for i in course_info_iter]
     course_info = [list(i) for i in course_info]
     course = []
     i = 0
-    for i in range(len(course_pos) - 1):
-        course.append([tuple_conv(i) for i in course_time_pattern.findall(resp.content.decode('utf-8'),
-                                                                          course_pos[i], course_pos[i+1])])
-    course.append([tuple_conv(i) for i in course_time_pattern.findall(resp.content.decode('utf-8'), course_pos[i+1])])
+    if course_pos:
+        for i in range(len(course_pos) - 1):
+            course.append([tuple_conv(i) for i in course_time_pattern.findall(resp.content.decode(),
+                                                                              course_pos[i], course_pos[i+1])])
+        course.append([tuple_conv(i) for i in course_time_pattern.findall(resp.content.decode(), course_pos[i+1])])
     result = []
     for i in range(len(course_info)):
         result.append(course_info[i] + [teacher_name[i]] + course[i])
@@ -166,6 +217,12 @@ def get_course_info(resp):
 
 # print the grade table on screen
 def print_grade_table(resp, cat_list_str):
+    cat_list_str_list = [i for i in cat_list_str.upper() if ord(i) in range(65, 70)]
+    cat_list_str_list = list(set(cat_list_str_list))
+    cat_list_str = ''
+    for i in cat_list_str_list:
+        cat_list_str += i
+
     n = 1
     table = prettytable.PrettyTable(['', '课程名称', '学分', '成绩'])
     for cat in get_specified_grade(resp, cat_list_str):
@@ -180,8 +237,28 @@ def print_grade_table(resp, cat_list_str):
     print('%s类学分绩:%.4f\n' % (cat_list_str, output_grade[0]))
 
 
-# print the course table on screen
-def print_course_table(course_info):
+# struct course data to help make course table
+def struct_course_data(sess, project_id, semester_id=None):
+    project_id = str(project_id)
+    sess.get(COURSETABLE_CLASS_URL + '?projectId=%s' % project_id)
+    response = sess.get(COURSETABLE_ID_URL + '?projectId=%s' % project_id)
+    if not semester_id:
+        semester_id = re.findall('semester\.id=(.+?);', response.headers['Set-Cookie'])[0]
+    result = get_std_course_id(response)
+    if not result:
+        print('Sorry, something went wrong, please close and try again!')
+    else:
+        course_ids = result[0]
+        course_data = {
+            'setting.kind': 'std',
+            'semester.id': semester_id,
+            'ids': course_ids
+        }
+        return course_data
+
+
+# struct the course table, be ready for printing
+def struct_course_table(course_info):
     row = []
     n = 1
     table = prettytable.PrettyTable([''] + [str(i+1) for i in range(7)], hrules=prettytable.ALL)
@@ -193,12 +270,60 @@ def print_course_table(course_info):
         row.append(str(n))
         for j in i:
             if j:
-                row.append('%s\n%s@%s' % (j[0], j[2], j[1]))
+                row.append('%s\n%s@%s' % (replace_some_word(j[0]), j[2], j[1]))
             else:
                 row.append(j)
         table.add_row(row)
         row = []
         n += 1
+    return table
+
+
+# print the course table on screen
+def print_course_table(sess, semester_id=None):
+    course_data1 = struct_course_data(sess, '1', semester_id)
+    courses1 = get_course_info(sess.post(COURSETABLE_URL, data=course_data1))
+    sess.get(HOME_URL + '/eams/home.action')
+    course_data2 = struct_course_data(sess, '2', semester_id)
+    courses2 = get_course_info(sess.post(COURSETABLE_URL, data=course_data2))
+    courses = struct_course_table(courses1 + courses2)
+    print('课程表:')
+    print(courses)
+
+
+# get the exam id
+def get_exam_id(sess, semester_id):
+    headers = {'Cookie': 'JSESSIONID=%s; semester.id=%s' % (sess.cookies.items()[0][1], semester_id)}
+    response = requests.get(EXAM_ID_URL, headers=headers)
+    pattern = re.compile('\'/eams/stdExam!examTable\.action\?examBatch\.id=(.+?)\'')
+    exam_id = pattern.findall(response.content.decode())
+    if exam_id:
+        return exam_id[0]
+    else:
+        print('Sorry, there are not any exam arrangement now '
+              '(or for the semester you just typed in).\nYou may try another semester.\n')
+        exit()
+
+
+# print the exam table on screen
+def print_exam_table(sess, semester_id=None):
+    if not semester_id:
+        response = sess.get(EXAM_ID_URL)
+        semester_id =re.findall('semester\.id=(.+?);', response.headers['Set-Cookie'])[0]
+    response = sess.get(EXAM_URL + '?examBatch.id=%s' % get_exam_id(sess, semester_id))
+    text = response.content.decode()
+    text = re.sub('<font color="BBC4C3">exam.*?noArrange</font>', '><', text)
+    pattern = re.compile('<td>\d{4}</td><td>(.*?)</td><td>.*?</td>.*?<td>>*'
+                         '(.*?)<*</td>.*?<td>>*(.*?)<*</td>.*?<td>.*?>(.*?)<.*?</td>.*?<td>正常</td>', re.S)
+    exam_info = pattern.findall(text)
+    table = prettytable.PrettyTable(['', '课程名称', '考试日期', '考试时间', '考试地点'])
+    n = 1
+    for row in exam_info:
+        row = list(row)
+        row[0] = replace_some_word(row[0])
+        table.add_row([str(n)] + list(row))
+        n += 1
+    print('考试安排:')
     print(table)
 
 
@@ -206,30 +331,32 @@ def print_course_table(course_info):
 def main():
     if test_net():
         args = docopt(__doc__)  # get program args
-        test_net()
-        sess = log_in(args['<username>'], args['<password>'])
+        if args['<username>'] and args['<password>']:
+            sess = log_in(args['<username>'], args['<password>'])
+        else:
+            username = input('Input your Student ID:')
+            password = getpass.getpass('Input your password:')
+            sess = log_in(username, password)
+        print('='*80)
+        print_std_detail(sess)
+        semester_id = None
+        if args['<semester>']:
+            semester_id = determine_semester_id(sess, args['<semester>'])
 
         # get the grade
-        if args['--grade']:
+        if args['-g']:
             response = sess.get(GRADE_URL)
             print_grade_table(response, args['<course_category>'])
 
         # get the course table
-        if args['--course']:
-            response = sess.get(COURSETABLE_ID_URL)
-            course_data = {
-                'setting.kind': 'std',
-                'ids': '%s' % get_std_course_id(response)[0]
-            }
-            sess.post(COURSETABLE_QUERY_URL)
-            response = sess.post(COURSETABLE_URL, data=course_data)
-            courses = get_course_info(response)
-            print_course_table(courses)
+        if args['-c']:
+            print_course_table(sess, semester_id)
 
+        if args['-e']:
+            print_exam_table(sess, semester_id)
         sess.close()
     else:
         print('Failed to connect the NKU-EAMIS system!\n')
-
 
 if __name__ == '__main__':
     main()
