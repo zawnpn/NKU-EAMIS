@@ -12,12 +12,18 @@ To upgrade this program, just execute `sudo pip3 install nkueamis --upgrade` .
  - Elect courses
 
 ## Usage
+    nkueamis -g [-u <username> -p <password>]
     nkueamis -g <course_category> [-u <username> -p <password>]
-    nkueamis ([-c -e]) [-s <semester>] [-u <username> -p <password>]
+    nkueamis -c [-s <semester>]
+    nkueamis -c [-u <username> -p <password>]
+    nkueamis -c -s <semester> -u <username> -p <password>
+    nkueamis -e [-s <semester>]
+    nkueamis -e [-u <username> -p <password>]
+    nkueamis -e -s <semester> -u <username> -p <password>
 
 ## Arguments
     course_category      the category of courses which you want to query(only can be combination of A,B,C,D,E)
-    semester             the semester you want to query, must be '[Year]-[Year]:[Semester]' type
+    semester             the semester you want to query, must be in '[Year]-[Year]:[Semester]' type
     username             your username in NKU-EAMIS system
     password             your password in NKU-EAMIS system
 

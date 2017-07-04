@@ -4,12 +4,18 @@
 # @Author  : Wanpeng Zhang
 # @Site    : http://www.oncemath.com
 # @File    : nkueamis.py
-# @Project : nkueamis
+# @Project : NKU-EAMIS
 
 """
 Usage:
+    nkueamis -g [-u <username> -p <password>]
     nkueamis -g <course_category> [-u <username> -p <password>]
-    nkueamis ([-c -e]) [-s <semester>] [-u <username> -p <password>]
+    nkueamis -c [-s <semester>]
+    nkueamis -c [-u <username> -p <password>]
+    nkueamis -c -s <semester> -u <username> -p <password>
+    nkueamis -e [-s <semester>]
+    nkueamis -e [-u <username> -p <password>]
+    nkueamis -e -s <semester> -u <username> -p <password>
 
 A simple tool to help get information in NKU-EAMIS(NKU Education Affairs Management Information System).
 
@@ -34,6 +40,7 @@ Examples:
     nkueamis -c
     nkueamis -c -s 2016-2017:2
     nkueamis -e -u your_username -p your_password
+
 """
 
 from docopt import docopt
@@ -169,9 +176,12 @@ def grade_calc(table):
     scoresum = 0
     for cat in table:
         for i in cat:
-            if i[2] and i[2] != '--':
-                gradesum += float(i[1])*float(i[2])
-                scoresum += float(i[1])
+            try:
+                if i[2] and i[2] != '--':
+                    gradesum += float(i[1])*float(i[2].split(' ')[0])
+                    scoresum += float(i[1])
+            except ValueError:
+                continue
     if scoresum:
         avg = gradesum/scoresum
     else:
@@ -215,22 +225,29 @@ def get_course_info(resp):
 def print_grade_table(resp, cat_list_str):
     cat_list_str_list = [i for i in cat_list_str.upper() if ord(i) in range(65, 70)]
     cat_list_str_list = list(set(cat_list_str_list))
-    cat_list_str = ''
-    for i in cat_list_str_list:
-        cat_list_str += i
-
+    cat_list_str_list.sort()
+    cat_list_str = ''.join(cat_list_str_list)
     n = 1
     table = prettytable.PrettyTable(['', '课程名称', '学分', '成绩'])
-    for cat in get_specified_grade(resp, cat_list_str):
-        for i in cat:
-            table.add_row([str(n)] + i)
-            n += 1
-    table.align['成绩'] = 'l'
-    print('\n%s类成绩表:' % cat_list_str)
-    print(table)
-    output_grade = grade_calc(get_specified_grade(resp, cat_list_str))
-    print('%s类已修学分:%.1f' % (cat_list_str, output_grade[1]))
-    print('%s类学分绩:%.4f\n' % (cat_list_str, output_grade[0]))
+    grade_table = get_specified_grade(resp, cat_list_str)
+    flag = False
+    for i in grade_table:
+        if i:
+            flag = True
+            break
+    if flag:
+        for cat in grade_table:
+            for i in cat:
+                table.add_row([str(n)] + i)
+                n += 1
+        table.align['成绩'] = 'l'
+        print('\n%s类成绩表:' % cat_list_str)
+        print(table)
+        output_grade = grade_calc(get_specified_grade(resp, cat_list_str))
+        print('%s类已修学分:%.1f' % (cat_list_str, output_grade[1]))
+        print('%s类学分绩:%.4f\n' % (cat_list_str, output_grade[0]))
+    else:
+        print('Failed to get your grades, please check your username and password!')
 
 
 # struct course data to help make course table
@@ -239,7 +256,11 @@ def struct_course_data(sess, project_id, semester_id=None):
     sess.get(COURSETABLE_CLASS_URL + '?projectId=%s' % project_id)
     response = sess.get(COURSETABLE_ID_URL + '?projectId=%s' % project_id)
     if not semester_id:
-        semester_id = re.findall('semester\.id=(.+?);', response.headers['Set-Cookie'])[0]
+        try:
+            semester_id = re.findall('semester\.id=(.+?);', response.headers['Set-Cookie'])[0]
+        except KeyError:
+            print('Failed to get your courses, please check your username and password!')
+            exit()
     result = get_std_course_id(response)
     if not result:
         print('Sorry, something went wrong, please close and try again!')
@@ -305,7 +326,10 @@ def get_exam_id(sess, semester_id):
 def print_exam_table(sess, semester_id=None):
     if not semester_id:
         response = sess.get(EXAM_ID_URL)
-        semester_id =re.findall('semester\.id=(.+?);', response.headers['Set-Cookie'])[0]
+        try:
+            semester_id =re.findall('semester\.id=(.+?);', response.headers['Set-Cookie'])[0]
+        except KeyError:
+            print('Failed to get your exams, please check your username and password!')
     response = sess.get(EXAM_URL + '?examBatch.id=%s' % get_exam_id(sess, semester_id))
     text = response.content.decode()
     text = re.sub('<font color="BBC4C3">exam.*?noArrange</font>', '><', text)
@@ -342,7 +366,10 @@ def main():
         # get the grade
         if args['-g']:
             response = sess.get(GRADE_URL)
-            print_grade_table(response, args['<course_category>'])
+            if args['<course_category>']:
+                print_grade_table(response, args['<course_category>'])
+            else:
+                print_grade_table(response, 'ABCDE')
 
         # get the course table
         if args['-c']:

@@ -1,11 +1,15 @@
 from setuptools import setup, find_packages
  
+with open('README.md') as f:
+    long_description = f.read()
+ 
 setup(
     name = 'nkueamis',
-    version = '0.3.1',
+    version = '0.3.2',
     author = 'Wanpeng Zhang',
     author_email = 'zawnpn@gmail.com',
     keywords = ('NKU', 'eamis', 'Education'),
+    long_description=long_description,
     url = 'https://github.com/zawnpn/nkueamis',
     description = 'A simple tool to help get information in NKU-EAMIS(NKU Education Affairs Management Information System).',
     classifiers=[
