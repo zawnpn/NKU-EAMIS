@@ -13,12 +13,7 @@ To upgrade this program, just execute `sudo pip3 install nkueamis --upgrade` .
 
 ## Usage
     nkueamis -g <course_category> [-u <username> -p <password>]
-    nkueamis -c [-s <semester>]
-    nkueamis -c [-u <username> -p <password>]
-    nkueamis -c -s <semester> -u <username> -p <password>
-    nkueamis -e [-s <semester>]
-    nkueamis -e [-u <username> -p <password>]
-    nkueamis -e -s <semester> -u <username> -p <password>
+    nkueamis ([-c -e]) [-s <semester>] [-u <username> -p <password>]
 
 ## Arguments
     course_category      the category of courses which you want to query(only can be combination of A,B,C,D,E)
@@ -30,6 +25,7 @@ To upgrade this program, just execute `sudo pip3 install nkueamis --upgrade` .
     -g                   grade query
     -c                   course query
     -e                   exam query
+    -s                   semester
     -u                   username
     -p                   password
     -h, --help           guidance
@@ -45,3 +41,7 @@ To upgrade this program, just execute `sudo pip3 install nkueamis --upgrade` .
 Blog:[Wanpeng Zhang](http://www.oncemath.com)
 
 E-mail:zawnpn@gmail.com
+
+## Others
+See more information in [http://www.oncemath.com/nku-eamis.html](http://www.oncemath.com/nku-eamis.html).
+
