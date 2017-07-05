@@ -199,7 +199,7 @@ def get_std_course_id(resp):
 # get information of courses
 def get_course_info(resp):
     teacher_pattern = re.compile('var teachers = \[{id:.*?,name:"(.+?)",lab:.*?}\];')
-    course_info_pattern = re.compile('\)","(.+?)\(.+?\)",".*?","(.*?)","01{3,}0{3,}"')
+    course_info_pattern = re.compile('\)","(.+?)\(.+?\)",".*?","(.*?)","0*1*0*"')
     course_time_pattern = re.compile('=(.+?)\*unitCount\+(.+?);')
     teacher_name = teacher_pattern.findall(resp.content.decode())
     course_info_iter = course_info_pattern.finditer(resp.content.decode())
