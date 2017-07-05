@@ -5,7 +5,7 @@ with open('README.md') as f:
  
 setup(
     name = 'nkueamis',
-    version = '0.3.2',
+    version = '0.3.4',
     author = 'Wanpeng Zhang',
     author_email = 'zawnpn@gmail.com',
     keywords = ('NKU', 'eamis', 'Education'),

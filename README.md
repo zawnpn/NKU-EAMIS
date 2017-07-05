@@ -12,7 +12,6 @@ To upgrade this program, just execute `sudo pip3 install nkueamis --upgrade` .
  - Elect courses
 
 ## Usage
-    nkueamis -g [-u <username> -p <password>]
     nkueamis -g <course_category> [-u <username> -p <password>]
     nkueamis -c [-s <semester>]
     nkueamis -c [-u <username> -p <password>]
