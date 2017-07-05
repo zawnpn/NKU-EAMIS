@@ -366,10 +366,7 @@ def main():
         # get the grade
         if args['-g']:
             response = sess.get(GRADE_URL)
-            if args['<course_category>']:
-                print_grade_table(response, args['<course_category>'])
-            else:
-                print_grade_table(response, 'ABCDE')
+            print_grade_table(response, args['<course_category>'])
 
         # get the course table
         if args['-c']:
