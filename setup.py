@@ -5,7 +5,7 @@ with open('README.md') as f:
  
 setup(
     name = 'nkueamis',
-    version = '0.3.4',
+    version = '0.4.0',
     author = 'Wanpeng Zhang',
     author_email = 'zawnpn@gmail.com',
     keywords = ('NKU', 'eamis', 'Education'),
@@ -13,7 +13,7 @@ setup(
     url = 'https://github.com/zawnpn/nkueamis',
     description = 'A simple tool to help get information in NKU-EAMIS(NKU Education Affairs Management Information System).',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Libraries',
         'License :: OSI Approved :: MIT License',

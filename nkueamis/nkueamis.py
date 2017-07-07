@@ -15,6 +15,7 @@ Usage:
     nkueamis -e [-s <semester>]
     nkueamis -e [-u <username> -p <password>]
     nkueamis -e -s <semester> -u <username> -p <password>
+    nkueamis --elect-course
 
 A simple tool to help get information in NKU-EAMIS(NKU Education Affairs Management Information System).
 
@@ -31,6 +32,7 @@ Options:
     -s                   semester
     -u                   username
     -p                   password
+    --elect-course       elect course
     -h, --help           guidance
 
 Examples:
@@ -44,10 +46,12 @@ Examples:
 
 from docopt import docopt
 import re
+import os
 import requests
 from bs4 import BeautifulSoup
 import prettytable
 import getpass
+import _pickle
 
 HOME_URL = 'http://eamis.nankai.edu.cn'
 LOGIN_URL = HOME_URL + '/eams/login.action'
@@ -60,6 +64,10 @@ COURSETABLE_ID_URL = HOME_URL + '/eams/courseTableForStd!innerIndex.action'
 COURSETABLE_URL = HOME_URL + '/eams/courseTableForStd!courseTable.action'
 EXAM_ID_URL = HOME_URL + '/eams/stdExam.action'
 EXAM_URL = HOME_URL + '/eams/stdExam!examTable.action'
+ELECT_URL = HOME_URL + '/eams/stdElectCourse!innerIndex.action'
+ELECT_PAGE_URL = HOME_URL + '/eams/stdElectCourse!defaultPage.action'
+ELECT_DATA_URL = HOME_URL + '/eams/stdElectCourse!data.action'
+ELECT_POST_URL = HOME_URL + '/eams/stdElectCourse!batchOperator.action'
 COURSE_CAT = ['校公共必修课', '院系公共必修课', '专业必修课', '专业选修课', '任选课']
 
 
@@ -203,7 +211,7 @@ def get_course_info(resp):
     course_time_pattern = re.compile('=(.+?)\*unitCount\+(.+?);')
     teacher_name = teacher_pattern.findall(resp.content.decode())
     course_info_iter = course_info_pattern.finditer(resp.content.decode())
-    test = course_info_pattern.findall(resp.content.decode())
+    # test = course_info_pattern.findall(resp.content.decode())
     course_info = course_info_pattern.findall(resp.content.decode())
     course_pos = [i.start() for i in course_info_iter]
     course_info = [list(i) for i in course_info]
@@ -346,6 +354,121 @@ def print_exam_table(sess, semester_id=None):
     print(table)
 
 
+# get elect url-id to open elect page
+def get_elect_urlid(sess):
+    response = sess.get(ELECT_URL + '?projectId=1')
+    pattern = re.compile('/eams/stdElectCourse!defaultPage\.action\?electionProfile\.id=(\d+)')
+    url_ids = pattern.findall(response.content.decode())
+    if url_ids:
+        return url_ids
+    else:
+        print('Failed to find the url to elect course, please check that if the system is open!')
+        exit()
+
+
+# get the semester-id for electing course
+def get_elect_semester_id(sess):
+    response = sess.get(ELECT_PAGE_URL + '?electionProfile.id=%s' % get_elect_urlid(sess)[0])
+    pattern = re.compile('&semesterId=(\d+)')
+    elect_semester_id = pattern.findall(response.content.decode())
+    return elect_semester_id[0]
+
+
+# get the id of elected course
+def get_elected_course_id(sess):
+    response = sess.get(ELECT_PAGE_URL + '?electionProfile.id=%s' % get_elect_urlid(sess)[0])
+    pattern = re.compile('electedIds\["l(\d+)"\] = true;')
+    elected = pattern.findall(response.content.decode())
+    return elected
+
+
+# tool for converting no to id
+def course_no2id(sess, course_no):
+    data = get_course_data(sess)
+    for i in data:
+        if i[1] == course_no:
+            course_id = i[0]
+            return course_id
+    print('Failed to elect your course, please make sure you\'re able to elect this course!')
+    exit()
+
+
+# print the elected courses
+def show_elected_courses(sess):
+    data = get_course_data(sess)
+    print('\n当前已选课程:\n')
+    for i in get_elected_course_id(sess):
+        for j in data:
+            if j[0] == i:
+                print(j[1], j[2])
+
+
+# get information of electable courses
+def get_course_data(sess):
+    if os.path.isfile('elect_data'):
+        with open('elect_data', 'rb') as f:
+            data = _pickle.load(f)
+    else:
+        url_ids = get_elect_urlid(sess)
+        sess.get(ELECT_PAGE_URL + '?electionProfile.id=%s' % url_ids[0])
+        response = sess.get(ELECT_DATA_URL + '?profileId=%s' % url_ids[0])
+        pattern = re.compile('id:(\d+),no:\'(\d+)\',name:\'(.*?)\',.*?teachers:\'(.*?)\'.*?rooms:\'(.*?)\'', re.S)
+        data = pattern.findall(response.content.decode())
+        with open('elect_data', 'wb') as f:
+            _pickle.dump(data, f)
+    return data
+
+
+# post data to elect course
+def elect_course(sess, course_id, course_status):
+    sess.get(ELECT_URL + '?projectId=1')
+    sess.get(ELECT_PAGE_URL + '?electionProfile.id=121')
+    data = {'operator0': '%s:%s' % (course_id, course_status)}
+    url_ids = get_elect_urlid(sess)
+    response = sess.post(ELECT_POST_URL + '?profileId=%s' % url_ids[0], data=data)
+    pattern = re.compile('<div.*?>(.+?\[\d+\].+?)</br>.*?</div>', re.S)
+    result = pattern.findall(response.content.decode())
+    if result:
+        print(result[0].strip())
+        if re.findall('成功|已经选过|冲突', result[0].strip()):
+            result.append('1')
+    else:
+        print('本次操作失败，请务必确保是正确操作(如不要退选不存在的课程等)！')
+        result.append('0')
+    return result
+
+
+# elect course
+def elect_course_interact(sess):
+    show_elected_courses(sess)
+    course_no = input('Input course ID (use sapce to separate):').split(' ')
+    course_status = input('input  option ([y]:elect course / [n]:drop course):')
+
+    course_id = [course_no2id(sess, i) for i in course_no]
+    if course_status.lower() == 'y':
+        cycle_num = input('input the cycles to elect course:')
+        if cycle_num == 'always':
+            print('\n已开启无限刷课模式(刷到自动结束)，如需提前终止请按Ctrl+C\n' + '='*60)
+            while course_id:
+                for j in course_id:
+                    result = elect_course(sess, j, 'true')
+                    if result[-1] == '1':
+                        course_id.remove(j)
+        else:
+            print('\n开始选课\n' + '=' * 60)
+            for i in range(int(cycle_num)):
+                for j in course_id:
+                    result = elect_course(sess, j, 'true')
+                    if result[-1] == '1':
+                        course_id.remove(j)
+        print('=' * 60 + '\nFinish!')
+    elif course_status.lower() == 'n':
+        for i in course_id:
+            elect_course(sess, i, 'false')
+    else:
+        print('Please input correct option!')
+
+
 # main
 def main():
     if test_net():
@@ -371,8 +494,14 @@ def main():
         if args['-c']:
             print_course_table(sess, semester_id)
 
+        # get the exams
         if args['-e']:
             print_exam_table(sess, semester_id)
+
+        # elect course
+        if args['--elect-course']:
+            elect_course_interact(sess)
+
         sess.close()
     else:
         print('Failed to connect the NKU-EAMIS system!\n')
