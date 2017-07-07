@@ -19,6 +19,7 @@ To upgrade this program, just execute `sudo pip3 install nkueamis --upgrade` .
     nkueamis -e [-s <semester>]
     nkueamis -e [-u <username> -p <password>]
     nkueamis -e -s <semester> -u <username> -p <password>
+    nkueamis --elect-course
 
 ## Arguments
     course_category      the category of courses which you want to query(only can be combination of A,B,C,D,E)
@@ -33,6 +34,7 @@ To upgrade this program, just execute `sudo pip3 install nkueamis --upgrade` .
     -s                   semester
     -u                   username
     -p                   password
+    --elect-course       elect-course
     -h, --help           guidance
 
 ## Examples
