@@ -503,6 +503,8 @@ def main():
             elect_course_interact(sess)
 
         sess.close()
+        if os.path.isfile('elect_data'):
+            os.remove('elect_data')
     else:
         print('Failed to connect the NKU-EAMIS system!\n')
 
