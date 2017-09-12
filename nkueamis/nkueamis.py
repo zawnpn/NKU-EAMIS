@@ -52,6 +52,8 @@ from bs4 import BeautifulSoup
 import prettytable
 import getpass
 import _pickle
+import time
+import random
 
 HOME_URL = 'http://eamis.nankai.edu.cn'
 LOGIN_URL = HOME_URL + '/eams/login.action'
@@ -405,7 +407,7 @@ def show_elected_courses(sess):
 
 # get information of electable courses
 def get_course_data(sess):
-    if os.path.isfile('elect_data'):
+    if os.path.exists('elect_data'):
         with open('elect_data', 'rb') as f:
             data = _pickle.load(f)
     else:
@@ -440,33 +442,50 @@ def elect_course(sess, course_id, course_status):
 
 # elect course
 def elect_course_interact(sess):
-    show_elected_courses(sess)
-    course_no = input('Input course ID (use sapce to separate):').split(' ')
-    course_status = input('input  option ([y]:elect course / [n]:drop course):')
-
-    course_id = [course_no2id(sess, i) for i in course_no]
-    if course_status.lower() == 'y':
-        cycle_num = input('input the cycles to elect course:')
-        if cycle_num == 'always':
-            print('\n已开启无限刷课模式(刷到自动结束)，如需提前终止请按Ctrl+C\n' + '='*60)
-            while course_id:
-                for j in course_id:
-                    result = elect_course(sess, j, 'true')
-                    if result[-1] == '1':
-                        course_id.remove(j)
+    flag = True
+    while flag:
+        show_elected_courses(sess)
+        course_no = input('Input course ID(s) (use sapce to separate):').split(' ')
+        course_status = input('Input option ([e]:elect course / [d]:drop course):')
+        course_id = [course_no2id(sess, i) for i in course_no]
+        if course_status.lower() == 'e':
+            cycle_num = input('Input the cycles to elect course:')
+            if cycle_num == 'INFINITY':
+                sleeptime = input('Input the sleep seconds for each cycle(at least one second):')
+                try:
+                    sleeptime = int(sleeptime)
+                except ValueError:
+                    print('Please input a number!')
+                    exit(1)
+                if sleeptime < 1:
+                    sleeptime = 1
+                sleeptime = random.uniform(sleeptime, sleeptime + 0.1)
+                print('\n已开启特殊模式，成功选上会自动停止。\n如需提前终止请按Ctrl+C\n\n\n' + '='*60)
+                try:
+                    while course_id:
+                        for j in course_id:
+                            result = elect_course(sess, j, 'true')
+                            if result[-1] == '1':
+                                course_id.remove(j)
+                            time.sleep(sleeptime)
+                except KeyboardInterrupt:
+                    print('\n' + '='*60 + '\nStopped by user!')
+            else:
+                print('\n开始选课\n' + '=' * 60)
+                for i in range(int(cycle_num)):
+                    for j in course_id:
+                        result = elect_course(sess, j, 'true')
+                        if result[-1] == '1':
+                            course_id.remove(j)
+            print('=' * 60 + '\nFinish!')
+        elif course_status.lower() == 'd':
+            for i in course_id:
+                elect_course(sess, i, 'false')
         else:
-            print('\n开始选课\n' + '=' * 60)
-            for i in range(int(cycle_num)):
-                for j in course_id:
-                    result = elect_course(sess, j, 'true')
-                    if result[-1] == '1':
-                        course_id.remove(j)
-        print('=' * 60 + '\nFinish!')
-    elif course_status.lower() == 'n':
-        for i in course_id:
-            elect_course(sess, i, 'false')
-    else:
-        print('Please input correct option!')
+            print('Please input correct option!')
+        choice = input('='*60 + '\nGo back to continue?[y/n]:').lower()
+        if choice != 'y':
+            flag = False
 
 
 # main
@@ -503,7 +522,7 @@ def main():
             elect_course_interact(sess)
 
         sess.close()
-        if os.path.isfile('elect_data'):
+        if os.path.exists('elect_data'):
             os.remove('elect_data')
     else:
         print('Failed to connect the NKU-EAMIS system!\n')
