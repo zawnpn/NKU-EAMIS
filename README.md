@@ -2,14 +2,11 @@
 A simple tool to help get information in NKU-EAMIS(NKU Education Affairs Management Information System).
 
 ## Install & Use
-Use command `sudo pip3 install nkueamis` to install, then just execute `nkueamis` with some options in your terminal;
+Use command `pip3 install nkueamis` to install, then just execute `nkueamis` with some options in your terminal;
 
 Or you can just clone this project and execute `python3 nkueamis.py` with options.(If you use this method, make sure the dependencies are satisfied!)
 
-To upgrade this program, just execute `sudo pip3 install nkueamis --upgrade` .
-
-## To be added
- - Elect courses
+To upgrade this program, just execute `pip3 install nkueamis --upgrade` .
 
 ## Usage
     nkueamis -g <course_category> [-u <username> -p <password>]
