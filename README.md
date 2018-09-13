@@ -1,6 +1,11 @@
 ## Introduction
 A simple tool to help get information in NKU-EAMIS(NKU Education Affairs Management Information System).
 
+[中文版说明](./README_CN.md)
+
+## Demo
+![Demo](./demo/demo.gif)
+
 ## Install & Use
 Use command `pip3 install nkueamis` to install, then just execute `nkueamis` with some options in your terminal;
 
@@ -40,7 +45,7 @@ To upgrade this program, just execute `pip3 install nkueamis --upgrade` .
     nkueamis -c
     nkueamis -c -s 2016-2017:2
     nkueamis -e -u your_username -p your_password
-    
+
 ## Author
 Blog:[Wanpeng Zhang](http://www.oncemath.com)
 
