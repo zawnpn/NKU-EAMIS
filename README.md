@@ -52,5 +52,5 @@ Blog:[Wanpeng Zhang](http://www.oncemath.com)
 E-mail:zawnpn@gmail.com
 
 ## Others
-See more information in [http://www.oncemath.com/nku-eamis.html](http://www.oncemath.com/nku-eamis.html).
+See more information in [https://www.oncemath.com/posts/projects/nku-eamis/](https://www.oncemath.com/posts/projects/nku-eamis/).
 
