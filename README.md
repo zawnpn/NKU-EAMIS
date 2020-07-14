@@ -47,10 +47,10 @@ To upgrade this program, just execute `pip3 install nkueamis --upgrade` .
     nkueamis -e -u your_username -p your_password
 
 ## Author
-Blog:[Wanpeng Zhang](http://www.oncemath.com)
+Blog:[Wanpeng Zhang](https://www.zhangwp.com)
 
 E-mail:zawnpn@gmail.com
 
 ## Others
-See more information in [https://www.oncemath.com/posts/projects/nku-eamis/](https://www.oncemath.com/posts/projects/nku-eamis/).
+See more information in [https://www.zhangwp.com/share/nku-eamis/](https://www.zhangwp.com/share/nku-eamis/).
 
