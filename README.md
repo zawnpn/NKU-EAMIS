@@ -52,5 +52,5 @@ Blog:[Wanpeng Zhang](https://www.zhangwp.com)
 E-mail:zawnpn@gmail.com
 
 ## Others
-See more information in [https://www.zhangwp.com/share/nku-eamis/](https://www.zhangwp.com/share/nku-eamis/).
+See more information in [https://www.zhangwp.com/projects/nku-eamis/](https://www.zhangwp.com/projects/nku-eamis/).
 
